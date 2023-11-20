@@ -13,6 +13,8 @@ cmd = [
     "--noconfirm",
     "--hidden-import",
     "edge_tts",
+    "--hidden-import",
+    "whisper",
     "--add-data",
     f"services{os.pathsep}services",
     "--add-data",
