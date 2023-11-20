@@ -65,6 +65,7 @@ class OpenAiWingman(Wingman):
             for tool_call in tool_calls:  # there could be multiple tool calls at once
                 function_name = tool_call.function.name
                 function_args = json.loads(tool_call.function.arguments)
+
                 if function_name == "execute_command":
                     # get the command based on the argument passed by GPT
                     command = self._get_command(function_args["command_name"])
@@ -73,8 +74,10 @@ class OpenAiWingman(Wingman):
                     # if the command has responses, we have to play one of them
                     if command.get("responses"):
                         self._play_audio(self._get_exact_response(command))
+
                 if function_name == "get_vision_from_screen_or_view":
-                    function_response = self._get_vision_from_screen_or_view()
+                    question = function_args["original_question"]
+                    function_response = self._get_vision_from_screen_or_view(question)
 
                 # add the response of the function to the messages list so that it can be used in the next GPT call
                 if function_response:
@@ -90,6 +93,10 @@ class OpenAiWingman(Wingman):
             # Make a second GPT call to process the function responses.
             # This basically summarizes the function responses.
             # We don't need GPT-4-Turbo for this, GPT-3.5 is enough
+                """ if function_name == "get_vision_from_screen_or_view":
+                    question = function_args["original_question"]
+                    function_response = self._get_vision_from_screen_or_view(question) """
+
             second_response = self.openai.ask(
                 messages=self.messages,
                 model="gpt-3.5-turbo-1106",
@@ -151,14 +158,20 @@ class OpenAiWingman(Wingman):
                     "description": "Gets a description of what is on the screen or in the view.",
                     "parameters": {
                         "type": "object",
-                        "properties": {},
+                        "properties": {
+                            "original_question": {
+                                "type": "string",
+                                "description": "The original question that was asked",
+                            },
+                        },
+                        "required": ["original_question"],
                     },
                 },
             },
         ]
         return tools
 
-    def _get_vision_from_screen_or_view(self) -> str:
+    def _get_vision_from_screen_or_view(self, question: str) -> str:
         import dxcam
 
         print("Getting vision from screen or view...")
@@ -198,7 +211,7 @@ class OpenAiWingman(Wingman):
                     "content": [
                         {
                             "type": "text",
-                            "text": "What’s in this image? Please describe it in just 1-2 sentences.",
+                            "text": f"{question} Please describe it in just 1-2 sentences.",
                         },
                         {
                             "type": "image_url",
@@ -216,9 +229,18 @@ class OpenAiWingman(Wingman):
             "https://api.openai.com/v1/chat/completions", headers=headers, json=payload
         )
 
-        print(response.json())
+        response_json = response.json()
+        # response.choices[0].message.content
+        response_text = response_json.get("choices")[0].get("message").get("content")
+        print(response_text)
 
-        return json.dumps(response.json())
+        self._play_audio(response_text)
+
+        return response_text
+
+        """ print(response.json())
+
+        return json.dumps(response.json()) """
 
     def encode_image(self, image_path):
         with open(image_path, "rb") as image_file:
