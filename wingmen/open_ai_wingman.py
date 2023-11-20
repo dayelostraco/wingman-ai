@@ -3,6 +3,9 @@ from exceptions import MissingApiKeyException
 from services.open_ai import OpenAi
 from services.printr import Printr
 from wingmen.wingman import Wingman
+from PIL import Image
+import base64
+import requests
 
 
 class OpenAiWingman(Wingman):
@@ -70,6 +73,8 @@ class OpenAiWingman(Wingman):
                     # if the command has responses, we have to play one of them
                     if command.get("responses"):
                         self._play_audio(self._get_exact_response(command))
+                if function_name == "get_vision_from_screen_or_view":
+                    function_response = self._get_vision_from_screen_or_view()
 
                 # add the response of the function to the messages list so that it can be used in the next GPT call
                 if function_response:
@@ -95,6 +100,8 @@ class OpenAiWingman(Wingman):
             second_content = second_response.choices[0].message.content
             self.messages.append(second_response.choices[0].message)
             self._play_audio(second_content)
+
+            return second_content
 
         return content
 
@@ -137,5 +144,82 @@ class OpenAiWingman(Wingman):
                     },
                 },
             },
+            {
+                "type": "function",
+                "function": {
+                    "name": "get_vision_from_screen_or_view",
+                    "description": "Gets a description of what is on the screen or in the view.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {},
+                    },
+                },
+            },
         ]
         return tools
+
+    def _get_vision_from_screen_or_view(self) -> str:
+        import dxcam
+
+        print("Getting vision from screen or view...")
+
+        camera = dxcam.create()
+        frame = camera.grab()
+
+        # Create a PIL image from array
+        image = Image.fromarray(frame)
+
+        desired_width = 1024
+        aspect_ratio = image.height / image.width
+        new_height = int(desired_width * aspect_ratio)
+
+        # resized_image = image.resize((512, 512))
+        resized_image = image.resize((desired_width, new_height))
+
+        # Save the image
+        resized_image.save("image.png")
+
+        # Path to your image
+        image_path = "image.png"
+
+        # Getting the base64 string
+        base64_image = self.encode_image(image_path)
+
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer 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",
+        }
+
+        payload = {
+            "model": "gpt-4-vision-preview",
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "What’s in this image? Please describe it in just 1-2 sentences.",
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/jpeg;base64,{base64_image}"
+                            },
+                        },
+                    ],
+                }
+            ],
+            "max_tokens": 300,
+        }
+
+        response = requests.post(
+            "https://api.openai.com/v1/chat/completions", headers=headers, json=payload
+        )
+
+        print(response.json())
+
+        return json.dumps(response.json())
+
+    def encode_image(self, image_path):
+        with open(image_path, "rb") as image_file:
+            return base64.b64encode(image_file.read()).decode("utf-8")
