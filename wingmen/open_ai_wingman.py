@@ -90,6 +90,9 @@ class OpenAiWingman(Wingman):
                         }
                     )
 
+                if function_name == "get_vision_from_screen_or_view":
+                    return None
+
             # Make a second GPT call to process the function responses.
             # This basically summarizes the function responses.
             # We don't need GPT-4-Turbo for this, GPT-3.5 is enough
@@ -227,17 +230,12 @@ class OpenAiWingman(Wingman):
         )
 
         response_json = response.json()
-        # response.choices[0].message.content
         response_text = response_json.get("choices")[0].get("message").get("content")
         print(response_text)
 
         self._play_audio(response_text)
 
         return response_text
-
-        """ print(response.json())
-
-        return json.dumps(response.json()) """
 
     def encode_image(self, image_path):
         with open(image_path, "rb") as image_file:
