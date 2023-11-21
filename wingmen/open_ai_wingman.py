@@ -96,7 +96,6 @@ class OpenAiWingman(Wingman):
             # Make a second GPT call to process the function responses.
             # This basically summarizes the function responses.
             # We don't need GPT-4-Turbo for this, GPT-3.5 is enough
-
             second_response = self.openai.ask(
                 messages=self.messages,
                 model="gpt-3.5-turbo-1106",
@@ -182,7 +181,7 @@ class OpenAiWingman(Wingman):
         # Create a PIL image from array
         image = Image.fromarray(frame)
 
-        desired_width = 1024
+        desired_width = 1280
         aspect_ratio = image.height / image.width
         new_height = int(desired_width * aspect_ratio)
 
@@ -206,12 +205,13 @@ class OpenAiWingman(Wingman):
         payload = {
             "model": "gpt-4-vision-preview",
             "messages": [
+                self.messages[0],
                 {
                     "role": "user",
                     "content": [
                         {
                             "type": "text",
-                            "text": f"{question} Please describe it in just 1-2 sentences.",
+                            "text": f"{question} Please respond in max. 1 sentence.",
                         },
                         {
                             "type": "image_url",
