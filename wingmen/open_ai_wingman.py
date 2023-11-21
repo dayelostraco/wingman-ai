@@ -108,7 +108,7 @@ class OpenAiWingman(Wingman):
             self.messages.append(second_response.choices[0].message)
             self._play_audio(second_content)
 
-            return second_content
+            # return second_content
 
         return content
 
