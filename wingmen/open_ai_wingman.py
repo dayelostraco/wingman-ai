@@ -93,9 +93,6 @@ class OpenAiWingman(Wingman):
             # Make a second GPT call to process the function responses.
             # This basically summarizes the function responses.
             # We don't need GPT-4-Turbo for this, GPT-3.5 is enough
-                """ if function_name == "get_vision_from_screen_or_view":
-                    question = function_args["original_question"]
-                    function_response = self._get_vision_from_screen_or_view(question) """
 
             second_response = self.openai.ask(
                 messages=self.messages,
