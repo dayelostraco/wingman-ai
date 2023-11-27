@@ -2,6 +2,7 @@ from os import path
 import sys
 import asyncio
 import threading
+import time
 import yaml
 from pynput import keyboard
 from exceptions import MissingApiKeyException
@@ -10,6 +11,7 @@ from services.check_version import check_version
 from services.tower import Tower
 from services.splashscreen import Splashscreen
 from services.printr import Printr
+import speech_recognition as sr
 
 
 def read_main_config(file_name=None) -> dict[str, any]:
@@ -48,7 +50,7 @@ def get_or_create_api_keys(filename="apikeys.yaml"):
         f"{Printr.clr('⌬', Printr.CYAN)} How to get your OpenAI API key: https://www.patreon.com/posts/how-to-get-your-93307145"
     )
     openai_api_key = input("Please paste your OpenAI API key: ")
-    #TODO do not override whole file
+    # TODO do not override whole file
     data = {"openai": {"api_key": openai_api_key}}
 
     with open(filename, "w", encoding="UTF-8") as file:
@@ -68,6 +70,12 @@ def on_release(key):
     if wingman:
         recorded_audio_wav = audio_recorder.stop_recording()
 
+        start_wingman(wingman, recorded_audio_wav)
+
+
+def start_wingman(wingman, recorded_audio_wav):
+    if wingman:
+
         def run_async_process():
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
@@ -81,6 +89,25 @@ def on_release(key):
             play_thread.start()
 
 
+def on_talk(recognizer, audio, text=""):
+    print("on_talk")
+    try:
+        wingmen = tower.get_wingmen()
+        wingman = wingmen[0]
+
+        recorded_audio_wav = "audio_output/output.wav"
+        with open(recorded_audio_wav, "wb") as f:
+            f.write(audio.get_wav_data())
+
+        start_wingman(wingman, recorded_audio_wav)
+        # text = recognizer.recognize_google(audio)
+        # print(f"Recognized: {text}")
+    except sr.UnknownValueError:
+        print("Could not understand audio")
+    except sr.RequestError as e:
+        print(f"Could not request results from Google Speech Recognition service; {e}")
+
+
 try:
     config = read_main_config()
 
@@ -88,8 +115,14 @@ try:
     # todo: remove for public release
     if config.get("version") or config["openai"].get("api_key"):
         Printr.err_print("You are using an outdated config.yaml file.")
-        Printr.err_print("Please copy&paste your changes/commands from the old one and save them or backup your old config.", False)
-        Printr.err_print("Then delete your config.yaml and copy the new one from our latest release into your Wingman directory.", False)
+        Printr.err_print(
+            "Please copy&paste your changes/commands from the old one and save them or backup your old config.",
+            False,
+        )
+        Printr.err_print(
+            "Then delete your config.yaml and copy the new one from our latest release into your Wingman directory.",
+            False,
+        )
         Printr.err_print("Then reapply your changes in the new config.", False)
         input("Press your favorite key to exit...")
         sys.exit(0)
@@ -106,7 +139,17 @@ try:
         check_version("https://shipbit.de/wingman.json")
         tower.prepare_wingmen()
 
-        with keyboard.Listener(on_press=on_press, on_release=on_release) as listener:
+        r, mic = sr.Recognizer(), sr.Microphone()
+        with mic as source:
+            r.adjust_for_ambient_noise(source)
+            r.pause_threshold = 0.5
+
+        r.listen_in_background(mic, on_talk, phrase_time_limit=None)
+
+        while True:
+            time.sleep(5)
+
+        """ with keyboard.Listener(on_press=on_press, on_release=on_release) as listener:
             print(
                 f"{Printr.clr('⌬', Printr.CYAN)} Press an assigned key to talk to the respective wingman"
             )
@@ -116,7 +159,7 @@ try:
             )
             print("")
 
-            listener.join()
+            listener.join() """
 
 except FileNotFoundError:
     Printr.err_print("Missing config.yaml")

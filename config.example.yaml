@@ -74,6 +74,20 @@ edge_tts:
   # List of all available EdgeTTS voices: https://discord.com/channels/1173573578604687360/1177606604150034473
   tts_voice: en-US-GuyNeural
 
+activation:
+  provider: keypress # default is 'keypress'. Uses the individual record keys defined per Wingman. Other choices are: 'voice_activation'
+
+voice_activation:
+  speech_to_text_provider: whisper # or: 'google'
+  default_wingman: board-computer # or: 'atc'
+  # Additional / Optional
+  pause_threshold: 0.8 # seconds of non-speaking audio before a phrase is considered complete
+  phrase_time_limit: null # maximum number of seconds that this will allow a phrase to continue before stopping and returning the part of the phrase processed before the time limit was reached.
+  adjust_for_ambient_noise: true # adjust the energy threshold dynamically using audio from the microphone to account for ambient noise
+  energy_threshold: 300 # minimum audio energy to consider for recording
+  phrase_threshold: 0.3 # minimum seconds of speaking audio before we consider the speaking audio a phrase - values below this are ignored (for filtering out clicks and pops)
+  non_speaking_duration: 0.5 # seconds of non-speaking audio to keep on both sides of the recording
+
 # ────────────────────────────────── Global commands ───────────────────────────────────────
 # These are available to all wingmen. You can override them per wingman if necessary.
 #

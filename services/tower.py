@@ -77,7 +77,7 @@ class Tower:
             wingman = self.key_wingman_dict.get(key.name, None)
         return wingman
 
-    def get_wingmen(self):
+    def get_wingmen(self) -> list[Wingman]:
         return self.wingmen
 
     def get_broken_wingmen(self):
