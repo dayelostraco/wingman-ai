@@ -1,5 +1,11 @@
 from os import path
 import sys
+import os
+
+# Add the root folder to sys.path. Assuming the script is run from within the root folder.
+root_directory = os.path.abspath(os.path.dirname(__file__))
+sys.path.insert(0, root_directory)
+
 import asyncio
 import threading
 from pynput import keyboard
