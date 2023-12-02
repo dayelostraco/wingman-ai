@@ -1,5 +1,4 @@
 from cx_Freeze import setup, Executable
-import os
 
 # Dependencies are automatically detected, but it might need
 # fine tuning.
@@ -35,10 +34,11 @@ build_options = {
 }
 
 import sys
-base = 'Win32GUI' if sys.platform=='win32' else None
+# base = 'Win32GUI' if sys.platform=='win32' else None
+base = 'console'
 
 executables = [
-    Executable('main.py', base=base, target_name='WingmanAI', icon='assets/icons/wingman-ai.png',)
+    Executable('main.py', base=base, target_name='WingmanAI', icon='./assets/icons/wingman-ai.png',)
 ]
 
 setup(name='WingmanAI',
